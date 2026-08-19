@@ -25,8 +25,9 @@ function MatrixRain(){
   const ref=useRef(null);
   useEffect(()=>{
     const canvas=ref.current,ctx=canvas.getContext('2d');
-    let raf,drops=[],speeds=[],w=0,h=0,lastFrame=0;
+    let raf,drops=[],speeds=[],highlights=[],w=0,h=0,lastFrame=0;
     const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
+    const featured=['AXION CHARGE','3.3 KW SMART AC','7.4 KW SMART AC','11 KW','22 KW','DC FAST'];
     const fontSize=17,columnWidth=22;
     const resize=()=>{
       const rect=canvas.parentElement.getBoundingClientRect();
@@ -35,6 +36,9 @@ function MatrixRain(){
       const count=Math.ceil(w/columnWidth);
       drops=Array.from({length:count},()=>Math.floor(Math.random()*-(h/fontSize)));
       speeds=Array.from({length:count},()=>.72+Math.random()*.38);
+      const featuredCount=Math.min(featured.length,Math.max(3,Math.floor(w/230)));
+      highlights=Array.from({length:featuredCount},(_,i)=>({text:featured[i%featured.length],x:0,y:-80-Math.random()*h,speed:1.15+Math.random()*.7,phase:Math.random()*Math.PI*2}));
+      highlights.forEach((item,i)=>{const band=w/highlights.length;item.x=band*i+band/2});
       ctx.fillStyle='#020604';ctx.fillRect(0,0,w,h);
     };
     const draw=(time=0)=>{
@@ -42,8 +46,8 @@ function MatrixRain(){
       if(time-lastFrame<33)return;
       lastFrame=time;
       ctx.shadowBlur=0;ctx.fillStyle='rgba(2,6,4,.075)';ctx.fillRect(0,0,w,h);
-      ctx.font=`700 ${fontSize}px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace`;
-      ctx.textAlign='center';ctx.fillStyle='#18ff68';ctx.shadowColor='#00ff66';ctx.shadowBlur=5;
+      ctx.font=`600 ${fontSize}px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace`;
+      ctx.textAlign='center';ctx.fillStyle='rgba(24,255,104,.22)';
       for(let i=0;i<drops.length;i++){
         const text=chars.charAt(Math.floor(Math.random()*chars.length));
         const x=i*columnWidth+columnWidth/2,y=drops[i]*fontSize;
@@ -51,6 +55,15 @@ function MatrixRain(){
         if(y>h&&Math.random()>.975){drops[i]=0;speeds[i]=.72+Math.random()*.38}
         drops[i]+=speeds[i];
       }
+      ctx.font=`800 ${w<700?13:15}px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace`;
+      ctx.shadowColor='#00ff66';ctx.shadowBlur=10;
+      highlights.forEach((item,i)=>{
+        item.y+=item.speed;
+        const pulse=.78+Math.sin(time*.0025+item.phase)*.18;
+        ctx.fillStyle=`rgba(126,255,161,${pulse})`;
+        ctx.fillText(item.text,item.x,item.y);
+        if(item.y>h+30){item.y=-50-Math.random()*220;item.speed=1.15+Math.random()*.7;item.text=featured[(featured.indexOf(item.text)+highlights.length)%featured.length]}
+      });
       ctx.shadowBlur=0;
     };
     resize();window.addEventListener('resize',resize);draw();
