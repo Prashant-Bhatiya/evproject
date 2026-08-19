@@ -23,8 +23,9 @@ function Header(){
 
 function MatrixRain(){
   const ref=useRef(null);
+  const highlightRef=useRef(null);
   useEffect(()=>{
-    const canvas=ref.current,ctx=canvas.getContext('2d');
+    const canvas=ref.current,ctx=canvas.getContext('2d'),highlightCanvas=highlightRef.current,hctx=highlightCanvas.getContext('2d');
     let raf,drops=[],speeds=[],highlights=[],w=0,h=0,lastFrame=0;
     const chars='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*';
     const featured=['AXION CHARGE','3.3 KW SMART AC','7.4 KW SMART AC','11 KW','22 KW','DC FAST'];
@@ -33,11 +34,12 @@ function MatrixRain(){
       const rect=canvas.parentElement.getBoundingClientRect();
       w=Math.ceil(rect.width);h=Math.ceil(rect.height);
       canvas.width=w;canvas.height=h;canvas.style.width=w+'px';canvas.style.height=h+'px';
+      highlightCanvas.width=w;highlightCanvas.height=h;highlightCanvas.style.width=w+'px';highlightCanvas.style.height=h+'px';
       const count=Math.ceil(w/columnWidth);
       drops=Array.from({length:count},()=>Math.floor(Math.random()*-(h/fontSize)));
       speeds=Array.from({length:count},()=>.72+Math.random()*.38);
-      const featuredCount=Math.min(featured.length,Math.max(3,Math.floor(w/230)));
-      highlights=Array.from({length:featuredCount},(_,i)=>({text:featured[i%featured.length],x:0,y:-80-Math.random()*h,speed:1.15+Math.random()*.7,phase:Math.random()*Math.PI*2}));
+      const featuredCount=w<700?5:Math.min(11,Math.max(7,Math.floor(w/135)));
+      highlights=Array.from({length:featuredCount},(_,i)=>({text:featured[i%featured.length],x:0,y:Math.random()*(h+240)-240,speed:1.15+Math.random()*.7,phase:Math.random()*Math.PI*2}));
       highlights.forEach((item,i)=>{const band=w/highlights.length;item.x=band*i+band/2});
       ctx.fillStyle='#020604';ctx.fillRect(0,0,w,h);
     };
@@ -55,21 +57,23 @@ function MatrixRain(){
         if(y>h&&Math.random()>.975){drops[i]=0;speeds[i]=.72+Math.random()*.38}
         drops[i]+=speeds[i];
       }
-      ctx.font=`800 ${w<700?13:15}px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace`;
-      ctx.shadowColor='#00ff66';ctx.shadowBlur=10;
+      const highlightSize=w<700?14:16,highlightStep=highlightSize+4;
+      hctx.clearRect(0,0,w,h);
+      hctx.font=`800 ${highlightSize}px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace`;
+      hctx.textAlign='center';hctx.textBaseline='alphabetic';hctx.lineWidth=2;hctx.strokeStyle='rgba(0,8,3,.92)';hctx.shadowColor='#00ff66';hctx.shadowBlur=3;
       highlights.forEach((item,i)=>{
         item.y+=item.speed;
-        const pulse=.78+Math.sin(time*.0025+item.phase)*.18;
-        ctx.fillStyle=`rgba(126,255,161,${pulse})`;
-        ctx.fillText(item.text,item.x,item.y);
-        if(item.y>h+30){item.y=-50-Math.random()*220;item.speed=1.15+Math.random()*.7;item.text=featured[(featured.indexOf(item.text)+highlights.length)%featured.length]}
+        const pulse=.9+Math.sin(time*.0025+item.phase)*.1;
+        hctx.fillStyle=`rgba(174,255,196,${pulse})`;
+        item.text.split('').forEach((letter,index)=>{if(letter!==' '){const letterY=item.y+index*highlightStep;hctx.strokeText(letter,item.x,letterY);hctx.fillText(letter,item.x,letterY)}});
+        if(item.y>h+30){item.y=-item.text.length*highlightStep-Math.random()*220;item.speed=1.15+Math.random()*.7;item.text=featured[(featured.indexOf(item.text)+highlights.length)%featured.length]}
       });
-      ctx.shadowBlur=0;
+      hctx.shadowBlur=0;
     };
     resize();window.addEventListener('resize',resize);draw();
     return()=>{cancelAnimationFrame(raf);window.removeEventListener('resize',resize)};
   },[]);
-  return <canvas ref={ref} className='matrixRain' aria-hidden='true'/>;
+  return <><canvas ref={ref} className='matrixRain' aria-hidden='true'/><canvas ref={highlightRef} className='matrixHighlights' aria-hidden='true'/></>;
 }
 
 function Footer(){const goTop=()=>window.scrollTo({top:0,behavior:'smooth'});const Link=({to,children})=><NavLink to={to} onClick={goTop}>{children}</NavLink>;return <footer className='siteFooter'><div className='footerInner'><div className='footerBrand'><img src={A+'axion-logo.png'} alt='AXION CHARGE'/><span>ENERGY : EVOLVED</span><p>Building India's next-generation EV charging ecosystem — premium hardware, intelligent software and a partner-led national network.</p><div className='footerContact'><a href='tel:+919979993397'>+91 99799 93397</a><span> · </span><a href='tel:+919979993396'>+91 99799 93396</a><a href='tel:+919879885551'>+91 98798 85551</a><a href='mailto:info@axioncharge.com'>info@axioncharge.com</a><a href='https://www.axioncharge.com' target='_blank' rel='noreferrer'>www.axioncharge.com</a></div><div className='footerSocials'><a href='https://www.linkedin.com/company/axion-charge/' target='_blank' rel='noreferrer' aria-label='AXION CHARGE on LinkedIn'>in</a><a href='https://www.instagram.com/axioncharge/' target='_blank' rel='noreferrer' aria-label='AXION CHARGE on Instagram'>◎</a><a href='https://x.com/axioncharge' target='_blank' rel='noreferrer' aria-label='AXION CHARGE on X'>𝕏</a><a href='https://www.youtube.com/@axioncharge' target='_blank' rel='noreferrer' aria-label='AXION CHARGE on YouTube'>▶</a></div></div><div className='footerNav'><div><b>Products</b><Link to='/products'>3.3 kW Smart AC</Link><Link to='/products'>7.4 kW Smart AC</Link><Link to='/products'>11 kW (roadmap)</Link><Link to='/products'>22 kW (roadmap)</Link><Link to='/products'>DC Fast (roadmap)</Link></div><div><b>Solutions</b><Link to='/solutions'>Residential</Link><Link to='/solutions'>Apartments & RWAs</Link><Link to='/solutions'>Builders</Link><Link to='/solutions'>Commercial</Link><Link to='/solutions'>Fleet charging</Link></div><div><b>Company</b><Link to='/technology'>About AXION CHARGE</Link><Link to='/technology'>Roadmap</Link><Link to='/partners'>Careers</Link><Link to='/resources'>Resources</Link></div><div><b>Support</b><Link to='/contact'>Request a quote</Link><Link to='/contact'>Installation</Link><Link to='/contact'>Service & maintenance</Link><Link to='/contact'>Contact</Link></div></div><div className='footerBottom'><small>© 2026 AXION CHARGE. All rights reserved.</small><div><Link to='/privacy'>Privacy Policy</Link><Link to='/terms'>Terms of Service</Link><Link to='/legal'>Legal</Link></div></div></div></footer>}
